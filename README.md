@@ -32,6 +32,11 @@ Códigos/
 - MySQL 8.4
 - Docker e Docker Compose
 
+## Requisitos
+
+- Docker
+- Docker Compose
+
 ## Como executar
 
 1. Entre na pasta [`Códigos`](/home/roberto/Documents/GitHub/Teste-de-software/Códigos).
