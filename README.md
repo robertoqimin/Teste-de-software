@@ -41,17 +41,17 @@ Códigos/
 docker compose up --build
 ```
 
-3. Acesse a aplicacao em `http://localhost:5000`.
-4. O MySQL ficara disponivel na porta `3306`.
+3. Acesse a aplicação em `http://localhost:5000`.
+4. O MySQL ficará disponível na porta `3306`.
 
 ## Containers
 
-- `app`: container da aplicacao Flask
+- `app`: container da aplicação Flask
 - `db`: container do MySQL
 
 O arquivo [docker-compose.yml](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/docker-compose.yml) publica:
 
-- `5000:5000` para a aplicacao
+- `5000:5000` para a aplicação
 - `3306:3306` para o MySQL
 
 Por isso a aplicacao pode abrir em:
@@ -62,7 +62,7 @@ Por isso a aplicacao pode abrir em:
 
 ## Banco de dados
 
-O banco e criado a partir de [schema.sql](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/database/schema.sql), que define:
+O banco é criado a partir de [schema.sql](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/database/schema.sql), que define:
 
 - banco `app_web`
 - tabela `users`
@@ -75,11 +75,11 @@ Campos da tabela `users`:
 - `password_hash`
 - `created_at`
 
-Importante: a senha do usuario nao e armazenada em texto puro. A aplicacao salva apenas `password_hash`.
+Importante: a senha do usuário não é armazenada em texto puro. A aplicacao salva apenas `password_hash`.
 
-## Configuracao
+## Configuração
 
-As configuracoes da aplicacao ficam em [config.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/config.py) e sao lidas de variaveis de ambiente:
+As configurações da aplicação ficam em [config.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/config.py) e são lidas de variáveis de ambiente:
 
 - `SECRET_KEY`
 - `DB_HOST`
@@ -88,16 +88,16 @@ As configuracoes da aplicacao ficam em [config.py](/home/roberto/Documents/GitHu
 - `DB_PASSWORD`
 - `DB_NAME`
 
-No ambiente Docker, essas variaveis sao definidas em [docker-compose.yml](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/docker-compose.yml).
+No ambiente Docker, essas variáveis são definidas em [docker-compose.yml](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/docker-compose.yml).
 
 ## Arquitetura
 
-- [app.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app.py): ponto de entrada da aplicacao
+- [app.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app.py): ponto de entrada da aplicação
 - [app/__init__.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/__init__.py): cria a app Flask e registra as rotas
 - [app/routes/__init__.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/routes/__init__.py): registro das rotas
 - [app/controllers/home_controller.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/controllers/home_controller.py): fluxo da rota principal
-- [app/models/site_model.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/models/site_model.py): dados de texto da pagina
-- [app/models/user_model.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/models/user_model.py): operacoes na tabela `users`
+- [app/models/site_model.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/models/site_model.py): dados de texto da página
+- [app/models/user_model.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/models/user_model.py): operações na tabela `users`
 - [app/views/home_view.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/views/home_view.py): renderizacao do template
 - [app/templates/index.html](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/templates/index.html): interface HTML
 - [app/database.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/database.py): conexao com o MySQL
