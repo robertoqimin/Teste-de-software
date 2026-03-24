@@ -10,18 +10,8 @@ Códigos/
 |   |-- routes/
 |   |-- static/
 |   |-- templates/
-|   |-- views/
-|   |-- __init__.py
-|   `-- database.py
-|-- database/
-|   `-- schema.sql
-|-- .env.example
-|-- .dockerignore
-|-- Dockerfile
-|-- app.py
-|-- config.py
-|-- docker-compose.yml
-`-- requirements.txt
+|   `-- views/
+`-- database/
 ```
 
 ## Tecnologias
@@ -54,33 +44,9 @@ docker compose up --build
 - `app`: container da aplicação Flask
 - `db`: container do MySQL
 
-O arquivo [docker-compose.yml](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/docker-compose.yml) publica:
-
-- `5000:5000` para a aplicação
-- `3306:3306` para o MySQL
-
-Por isso a aplicacao pode abrir em:
-
-- `http://localhost:5000`
-- `http://127.0.0.1:5000`
-- `http://SEU_IP_LOCAL:5000`
-
 ## Banco de dados
 
-O banco é criado a partir de [schema.sql](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/database/schema.sql), que define:
-
-- banco `app_web`
-- tabela `users`
-
-Campos da tabela `users`:
-
-- `id`
-- `name`
-- `email`
-- `password_hash`
-- `created_at`
-
-Importante: a senha do usuário não é armazenada em texto puro. A aplicacao salva apenas `password_hash`.
+O banco é criado a partir de [schema.sql](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/database/schema.sql).
 
 ## Configuração
 
@@ -97,28 +63,10 @@ No ambiente Docker, essas variáveis são definidas em [docker-compose.yml](/hom
 
 ## Arquitetura
 
-- [app.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app.py): ponto de entrada da aplicação
-- [app/__init__.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/__init__.py): cria a app Flask e registra as rotas
-- [app/routes/__init__.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/routes/__init__.py): registro das rotas
-- [app/controllers/home_controller.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/controllers/home_controller.py): fluxo da rota principal
-- [app/models/site_model.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/models/site_model.py): dados de texto da página
-- [app/models/user_model.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/models/user_model.py): operações na tabela `users`
-- [app/views/home_view.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/views/home_view.py): renderizacao do template
-- [app/templates/index.html](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/templates/index.html): interface HTML
-- [app/database.py](/home/roberto/Documents/GitHub/Teste-de-software/Códigos/app/database.py): conexao com o MySQL
-
-## Fluxo da aplicacao
-
-1. O usuario acessa `/`
-2. O controller renderiza o formulario
-3. O usuario envia `nome`, `email` e `senha`
-4. O controller valida os campos
-5. A senha e convertida em hash
-6. O model salva o usuario no MySQL
-7. A pagina retorna com mensagem de sucesso ou erro
-
-## Persistencia dos dados
-
-O MySQL usa um volume Docker, entao os dados continuam salvos mesmo apos reiniciar os containers.
-
-Se voce ja cadastrou usuarios antes, eles podem continuar existindo na base em novas execucoes do projeto.
+- `app/controllers`: controla o fluxo das requisições e integra as camadas da aplicação
+- `app/models`: concentra regras de negócio e acesso aos dados
+- `app/routes`: organiza e registra as rotas da aplicação
+- `app/views`: centraliza a renderização das respostas
+- `app/templates`: armazena os templates HTML
+- `app/static`: guarda arquivos estáticos como CSS, JavaScript e imagens
+- `database`: reúne scripts e artefatos relacionados ao banco de dados
