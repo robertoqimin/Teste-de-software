@@ -47,10 +47,6 @@ Códigos/
 | Node.js e npm | Node 22 na imagem Docker | Instalação das dependências e execução do build do frontend. |
 | Fetch API e FormData | APIs do navegador | Comunicação com o Flask e envio de formulários e arquivos sem recarregar a página. |
 
-React e Tailwind são instalados pelo npm e incluídos no build. As telas não
-carregam essas bibliotecas por CDN. As versões resolvidas das dependências
-JavaScript ficam registradas em `frontend/package-lock.json`.
-
 ### Backend e banco de dados
 
 | Tecnologia | Versão/configuração | Uso no projeto |
