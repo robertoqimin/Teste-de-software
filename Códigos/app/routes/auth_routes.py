@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, redirect, request, session, url_for
+from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
 from app.auth import professor_required
 from app.controllers.auth_controller import buscar_alunos, cadastrar_usuario, login_usuario
@@ -18,9 +18,11 @@ def _get_request_data():
     return request.get_json(silent=True) or {}
 
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    data = request.json
+    if request.method == "GET":
+        return render_template("spa.html")
+    data = request.get_json(silent=True)
     response, status = login_usuario(data)
     if status == 200:
         session["user_id"] = response["id"]
@@ -45,6 +47,7 @@ def cadastro():
 
 @auth_bp.route('/cadastro/aluno', methods=['POST'])
 @auth_bp.route('/cadastro/alunos', methods=['POST'])
+@auth_bp.route("/api/cadastro/aluno", methods=["POST"])
 def cadastro_aluno():
     error_response = _admin_session_required()
     if error_response:
@@ -58,6 +61,7 @@ def cadastro_aluno():
 
 @auth_bp.route('/cadastro/professor', methods=['POST'])
 @auth_bp.route('/cadastro/professores', methods=['POST'])
+@auth_bp.route("/api/cadastro/professor", methods=["POST"])
 def cadastro_professor():
     error_response = _admin_session_required()
     if error_response:

@@ -1,0 +1,9 @@
+frontend/node_modules
+app/static/dist
+__pycache__
+**/__pycache__
+.env
+.venv
+uploads
+frontend/test-results
+frontend/playwright-report

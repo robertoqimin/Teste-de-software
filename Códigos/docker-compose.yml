@@ -16,7 +16,6 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no arquivo .env}
       DB_NAME: ${DB_NAME:-app_web}
     volumes:
-      - .:/app
       - uploads_data:/app/uploads
     depends_on:
       db:

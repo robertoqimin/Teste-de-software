@@ -31,6 +31,7 @@ def _get_or_create_disciplina_geral(db):
 
 
 @document_bp.route('/arquivos/upload', methods=['POST'])
+@document_bp.route("/api/arquivos/upload", methods=["POST"])
 def upload_arquivo():
     is_admin = normalize_role(session.get("user_role")) == "admin"
     jwt_payload = None
@@ -54,7 +55,7 @@ def upload_arquivo():
     )
 
     redirect_to = request.form.get("redirect_to")
-    if 200 <= status < 300 and redirect_to and redirect_to.startswith("/"):
+    if 200 <= status < 300 and redirect_to and redirect_to.startswith("/") and not request.path.startswith("/api/"):
         return redirect(redirect_to)
 
     return jsonify(response), status
@@ -127,6 +128,7 @@ def download_arquivo(filename):
 
 
 @document_bp.route('/professores/<int:professor_id>/arquivos/upload', methods=['POST'])
+@document_bp.route("/api/professores/<int:professor_id>/arquivos/upload", methods=["POST"])
 def upload_arquivo_professor(professor_id):
     if normalize_role(session.get("user_role")) != "admin":
         return jsonify({"erro": "Acesso permitido apenas para administradores"}), 403
@@ -173,7 +175,7 @@ def upload_arquivo_professor(professor_id):
         db.close()
 
     redirect_to = request.form.get("redirect_to")
-    if redirect_to and redirect_to.startswith("/"):
+    if redirect_to and redirect_to.startswith("/") and not request.path.startswith("/api/"):
         return redirect(redirect_to)
 
     return jsonify({"mensagem": "Arquivo enviado"}), 201

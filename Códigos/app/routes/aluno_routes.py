@@ -1,10 +1,8 @@
-from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.datastructures import MultiDict
 
 from app.controllers.document_controller import upload_documento
 from app.controllers.aluno_controller import (
-    get_aluno_disciplina_detail,
-    get_aluno_area_data,
     get_aluno_by_user_id,
     get_aluno_document_request,
     marcar_documento_aluno_enviado,
@@ -17,25 +15,16 @@ aluno_bp = Blueprint("aluno", __name__)
 @aluno_bp.route("/aluno", methods=["GET"])
 @aluno_bp.route("/aluno/dashboard", methods=["GET"])
 def dashboard():
-    aluno_required()
-    data = get_aluno_area_data(session.get("user_id"))
-    if not data:
-        abort(404)
-
-    return render_template("aluno_painel.html", **data)
+    return render_template("spa.html")
 
 
 @aluno_bp.route("/aluno/disciplinas/<int:disciplina_id>", methods=["GET"])
 def disciplina_detail(disciplina_id):
-    aluno_required()
-    data = get_aluno_disciplina_detail(session.get("user_id"), disciplina_id)
-    if not data:
-        abort(404)
-
-    return render_template("aluno_disciplina.html", **data)
+    return render_template("spa.html")
 
 
 @aluno_bp.route("/aluno/documentos/upload", methods=["POST"])
+@aluno_bp.route("/api/aluno/documentos/upload", methods=["POST"])
 def upload_documento_aluno():
     aluno_required()
     aluno = get_aluno_by_user_id(session.get("user_id"))
@@ -66,6 +55,7 @@ def upload_documento_aluno():
             aluno["id"],
             response["documento"]["id"],
         )
-        return redirect(url_for("aluno.dashboard"))
+        if not request.path.startswith("/api/"):
+            return redirect(url_for("aluno.dashboard"))
 
     return jsonify(response), status

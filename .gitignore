@@ -22,3 +22,10 @@ env/
 # OS/editor cache
 .DS_Store
 Thumbs.db
+# Frontend build
+node_modules/
+Códigos/app/static/dist/
+
+# Browser test artifacts
+Códigos/frontend/test-results/
+Códigos/frontend/playwright-report/

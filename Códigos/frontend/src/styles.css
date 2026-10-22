@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[hidden] { display: none !important; }
+#root { min-height: 100vh; }
+.app-layout { min-height: 100vh; }
+.form-feedback { grid-column: 1 / -1; margin-top: 1rem; font-size: 0.875rem; }
+form[aria-busy="true"] button[type="submit"] { opacity: 0.6; cursor: wait; }
+@media (max-width: 900px) {
+    .app-layout { flex-direction: column; }
+    .app-layout > aside { position: relative; width: 100%; height: auto; }
+    .app-layout > main { padding: 24px; min-width: 0; }
+}
