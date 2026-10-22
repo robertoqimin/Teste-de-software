@@ -20,7 +20,7 @@ Códigos/
 |-- frontend/
 |   |-- src/
 |   |   |-- components/    # navegação, sessão, abas e formulários
-|   |   |-- pages/         # 13 telas em JSX
+|   |   |-- pages/        
 |   |   `-- styles/
 |   `-- tests/            # testes Playwright
 |-- tests/                # servidor isolado para testes
