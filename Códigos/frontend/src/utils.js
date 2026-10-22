@@ -2,5 +2,5 @@
 export const truthy = (value) => Array.isArray(value) ? value.length > 0 : Boolean(value);
 
 export const homeForRole = (role) => ({
-    admin: '/admin/dashboard', aluno: '/aluno', professor: '/professor',
+    admin: '/gestao', secretaria: '/admin/dashboard', aluno: '/aluno', professor: '/professor',
 }[role] || '/login');

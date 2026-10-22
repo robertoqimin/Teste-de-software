@@ -1,5 +1,7 @@
 import React, { Fragment } from 'react';
 
+import { AlunoComunicados } from '../components/AlunoComunicados';
+import { ActionDialog } from '../components/ActionDialog';
 import { LogoutButton } from '../components/Navigation';
 import { MutationForm } from '../components/MutationForm';
 import { TabButton, TabPanel } from '../components/Tabs';
@@ -26,6 +28,7 @@ export default function ProfessorPainel({ data }) {
             <TabButton type="button" group="professor" value="documentos" as="button" className="professor-nav-link w-full flex items-center px-4 py-3 rounded-xl hover:bg-white/5 transition-all hover:text-white">
                 Documentos
             </TabButton>
+            <TabButton group="professor" value="comunicados" className="professor-nav-link w-full flex items-center px-4 py-3 rounded-xl">Comunicados</TabButton>
         </nav>
 
         <div className="mt-auto pt-6 border-t border-white/10">
@@ -54,6 +57,8 @@ export default function ProfessorPainel({ data }) {
             </div>
         </header>
 
+        <TabPanel group="professor" value="comunicados" as="section"><AlunoComunicados /></TabPanel>
+
         <TabPanel group="professor" value="turmas" as="section" className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold">Turmas</h2>
@@ -61,6 +66,9 @@ export default function ProfessorPainel({ data }) {
             </div>
 
             {turmas.length ? <>{turmas.map((turma, index30) => <Fragment key={turma?.id ?? index30}>
+            <div className="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+                <div><p className="font-semibold">{turma.nome}</p><p className="text-sm text-slate-300 mt-1">{turma.codigo} · {turma.turno} · {turma.alunos.length} alunos</p></div>
+                <ActionDialog title={turma.nome} label={turma.nome} wide>
             <article className="glass-card professor-card rounded-[28px] p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
                     <div>
@@ -81,94 +89,62 @@ export default function ProfessorPainel({ data }) {
                     </div>
                 </div>
 
-                <div className="professor-activity-panel">
-                    <div>
-                        <h4>Lançar atividade</h4>
-                        <p>Publique uma atividade para esta turma.</p>
+                <section className="glass-card rounded-2xl p-6">
+                    <div className="flex flex-wrap justify-between items-center gap-3 mb-6"><h4 className="text-xl font-bold">Atividades e conteúdos</h4><span className="text-sm text-cyan-400">Publicações da turma</span></div>
+                    <div className="flex gap-4 border-b border-white/10 mb-6" role="tablist" aria-label="Publicações da turma">
+                        <TabButton group={`publicacoes-${turma.id}`} defaultValue="atividade" value="atividade" className="pb-2">Atividades</TabButton>
+                        <TabButton group={`publicacoes-${turma.id}`} defaultValue="atividade" value="conteudo" className="pb-2">Conteúdos</TabButton>
                     </div>
+                {['atividade', 'conteudo'].map(tipo => {
+                    const publicacoes = turma.atividades.filter(item => (item.tipo || 'atividade') === tipo);
+                    return (
+                <TabPanel key={tipo} group={`publicacoes-${turma.id}`} defaultValue="atividade" value={tipo}>
                     {truthy(turma.disciplinas) ? <> 
-                    <MutationForm action={"/api/professor/atividades/lancar"} method="post" encType="multipart/form-data" className="professor-activity-form">
+                    <MutationForm modalTitle={tipo === 'atividade' ? 'Nova atividade' : 'Novo conteúdo'} modalLabel={tipo === 'atividade' ? 'Lançar atividade' : 'Publicar conteúdo'} action={"/api/professor/atividades/lancar"} method="post" encType="multipart/form-data" className="professor-activity-form">
+                        <input type="hidden" name="tipo" value={tipo} />
                         <input type="hidden" name="turma_id" value={turma.id} />
-                        <select name="disciplina_id" required>
+                        <label className="modal-field"><span>Disciplina</span><select name="disciplina_id" required>
                             {turma.disciplinas.map((disciplina, index32) => <Fragment key={disciplina?.id ?? index32}>
                             <option value={disciplina.id}>{disciplina.nome}</option>
                             </Fragment>)}
-                        </select>
-                        <input name="titulo" type="text" placeholder="Título da atividade" required />
-                        <input name="data_entrega" type="date" />
-                        <input name="arquivo" type="file" />
-                        <textarea name="descricao" placeholder="Descrição da atividade"></textarea>
-                        <button>Lançar atividade</button>
+                        </select></label>
+                        <label className="modal-field"><span>{tipo === 'atividade' ? 'Título da atividade' : 'Título do conteúdo'}</span><input name="titulo" type="text" placeholder="Título da atividade" required /></label>
+                        {tipo === 'atividade' && <label className="modal-field"><span>Data de entrega</span><input name="data_entrega" type="date" /></label>}
+                        <label className="modal-field"><span>Anexo (opcional)</span><input name="arquivo" type="file" /></label>
+                        <label className="modal-field"><span>Descrição</span><textarea name="descricao" placeholder="Descrição da atividade"></textarea></label>
+                        <button data-ui-action>{tipo === 'atividade' ? 'Lançar atividade' : 'Publicar conteúdo'}</button>
                     </MutationForm>
                      </> : <> 
                     <p className="text-sm text-gray-400">Associe uma disciplina ao professor e à turma para lançar atividade.</p>
                      </>}
 
+                    <h5 className="text-sm font-bold uppercase tracking-wider text-slate-300 mt-8 mb-4">{tipo === 'atividade' ? 'Atividades publicadas' : 'Conteúdos publicados'}</h5>
                     <div className="professor-activity-list">
-                        {turma.atividades.length ? <>{turma.atividades.map((atividade, index33) => <Fragment key={atividade?.id ?? index33}>
+                        {publicacoes.length ? <>{publicacoes.map((atividade, index33) => <Fragment key={atividade?.id ?? index33}>
                         <article>
                             <div>
                                 <strong>{atividade.titulo}</strong>
-                                <span>{atividade.disciplina} · Entrega: {atividade.data_entrega}</span>
+                                <span>{atividade.disciplina}{tipo === 'atividade' && ` · Entrega: ${atividade.data_entrega}`}</span>
                                 <p>{atividade.descricao}</p>
                                 {truthy(atividade.arquivo) ? <> 
-                                <a href={`/arquivos/download/${encodeURIComponent(atividade.arquivo)}`}>Baixar anexo</a>
+                                <a data-ui-action href={`/arquivos/download/${encodeURIComponent(atividade.arquivo)}`}>Baixar anexo</a>
                                  </> : <>  </>}
                             </div>
                             <small>{atividade.data}</small>
                         </article>
                         </Fragment>)}</> : <>
-                        <div className="professor-empty-line">Nenhuma atividade lançada para esta turma.</div>
+                        <div className="professor-empty-line">{tipo === 'atividade' ? 'Nenhuma atividade lançada para esta turma.' : 'Nenhum conteúdo publicado para esta turma.'}</div>
                         </>}
                     </div>
-                </div>
+                </TabPanel>
 
-                <div className="professor-table-wrapper">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="text-gray-500 text-xs uppercase tracking-wider">
-                                <th className="pb-4 font-medium">Aluno</th>
-                                <th className="pb-4 font-medium">Disciplina</th>
-                                <th className="pb-4 font-medium">Nota</th>
-                                <th className="pb-4 font-medium">Observação</th>
-                                <th className="pb-4 font-medium"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                            {turma.alunos.length ? <>{turma.alunos.map((aluno, index34) => <Fragment key={aluno?.id ?? index34}>
-                            <tr className="border-t border-white/5">
-                                <td className="py-4">
-                                    <span className="block font-bold text-white">{aluno.nome}</span>
-                                    <span className="text-xs text-gray-500">{aluno.matricula}</span>
-                                </td>
-                                <td className="py-4" colSpan="4">
-                                    {truthy(turma.disciplinas) ? <> 
-                                    <MutationForm action={"/api/professor/notas/salvar"} method="post" className="professor-grade-form">
-                                        <input type="hidden" name="turma_id" value={turma.id} />
-                                        <input type="hidden" name="aluno_id" value={aluno.id} />
-                                        <select name="disciplina_id" required>
-                                            {turma.disciplinas.map((disciplina, index35) => <Fragment key={disciplina?.id ?? index35}>
-                                            <option value={disciplina.id}>{disciplina.nome}</option>
-                                            </Fragment>)}
-                                        </select>
-                                        <input name="nota" type="number" min="0" max="10" step="0.01" placeholder="0-10" required />
-                                        <input name="observacao" type="text" placeholder="Observação" />
-                                        <button>Salvar nota</button>
-                                    </MutationForm>
-                                     </> : <> 
-                                    <span className="text-gray-500">Associe uma disciplina ao professor e à turma para lançar nota.</span>
-                                     </>}
-                                </td>
-                            </tr>
-                            </Fragment>)}</> : <>
-                            <tr className="border-t border-white/5">
-                                <td className="py-6 text-gray-400" colSpan="5">Nenhum aluno associado a esta turma.</td>
-                            </tr>
-                            </>}
-                        </tbody>
-                    </table>
-                </div>
+                    );
+                })}
+                </section>
+
             </article>
+                </ActionDialog>
+            </div>
             </Fragment>)}</> : <>
             <div className="glass-card professor-card rounded-[28px] p-6 text-gray-400">
                 Nenhuma turma associada ao seu cadastro.
@@ -177,9 +153,11 @@ export default function ProfessorPainel({ data }) {
         </TabPanel>
 
         <TabPanel group="professor" value="notas" as="section" className="">
-            <div className="glass-card professor-card rounded-[32px] p-8 mb-8">
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-6"><h2 className="text-xl font-bold">Notas</h2>
+            <ActionDialog title="Lançar notas" label="Lançar notas" wide>
+            <div className="space-y-5">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold">Lançar Notas</h2>
+                    <p className="text-slate-300">Selecione o aluno e informe a nota.</p>
                     <span className="text-sm text-gray-400">Por turma, aluno e disciplina</span>
                 </div>
 
@@ -211,18 +189,18 @@ export default function ProfessorPainel({ data }) {
                                             <span className="text-xs text-gray-500">{aluno.matricula}</span>
                                         </td>
                                         <td className="py-4">
-                                            <MutationForm action={"/api/professor/notas/salvar"} method="post" className="professor-grade-form">
-                                                <input type="hidden" name="turma_id" value={turma.id} />
-                                                <input type="hidden" name="aluno_id" value={aluno.id} />
-                                                <select name="disciplina_id" required>
-                                                    {turma.disciplinas.map((disciplina, index38) => <Fragment key={disciplina?.id ?? index38}>
-                                                    <option value={disciplina.id}>{disciplina.nome}</option>
-                                                    </Fragment>)}
-                                                </select>
-                                                <input name="nota" type="number" min="0" max="10" step="0.01" placeholder="0-10" required />
-                                                <input name="observacao" type="text" placeholder="Observação" />
-                                                <button>Salvar nota</button>
-                                            </MutationForm>
+                                    <MutationForm action={"/api/professor/notas/salvar"} method="post" className="professor-grade-form">
+                                        <input type="hidden" name="turma_id" value={turma.id} />
+                                        <input type="hidden" name="aluno_id" value={aluno.id} />
+                                        <label className="modal-field"><span>Disciplina</span><select name="disciplina_id" required>
+                                            {turma.disciplinas.map((disciplina, index38) => <Fragment key={disciplina?.id ?? index38}>
+                                            <option value={disciplina.id}>{disciplina.nome}</option>
+                                            </Fragment>)}
+                                        </select></label>
+                                        <label className="modal-field"><span>Nota</span><input name="nota" type="number" min="0" max="10" step="0.01" placeholder="0-10" required /></label>
+                                        <label className="modal-field"><span>Observação</span><input name="observacao" type="text" placeholder="Observação" /></label>
+                                        <button data-ui-action>Salvar nota</button>
+                                    </MutationForm>
                                         </td>
                                     </tr>
                                     </Fragment>)}
@@ -240,6 +218,8 @@ export default function ProfessorPainel({ data }) {
                     </div>
                     </>}
                 </div>
+            </div>
+            </ActionDialog>
             </div>
 
             <div className="glass-card professor-card rounded-[32px] p-8">
@@ -297,13 +277,13 @@ export default function ProfessorPainel({ data }) {
                         <strong className={`professor-request-status professor-request-status-${solicitacao.status}`}>{solicitacao.status_label}</strong>
                     </div>
                     {truthy(solicitacao.status !== "enviado") ? <> 
-                    <MutationForm action={"/api/professor/documentos/upload"} method="post" encType="multipart/form-data" className="professor-doc-form mt-4">
+                    <MutationForm modalTitle="Enviar documento solicitado" modalLabel="Enviar documento" action={"/api/professor/documentos/upload"} method="post" encType="multipart/form-data" className="professor-doc-form mt-4">
                         <input type="hidden" name="solicitacao_id" value={solicitacao.id} />
                         <label>
                             <span>Arquivo</span>
                             <input name="arquivo" type="file" required />
                         </label>
-                        <button>Enviar documento</button>
+                        <button data-ui-action>Enviar documento</button>
                     </MutationForm>
                      </> : <>  </>}
                 </article>
@@ -316,18 +296,19 @@ export default function ProfessorPainel({ data }) {
             </div>
 
             <div className="glass-card professor-card rounded-[32px] p-8">
-                <h2 className="text-xl font-bold">Documentos Enviados</h2>
-                <p className="mt-1 text-sm text-gray-400">Histórico dos arquivos respondidos à secretaria.</p>
+                <h2 className="text-xl font-bold">Arquivos e entregas</h2>
+                <p className="mt-1 text-sm text-gray-400">Documentos enviados e atividades entregues pelos seus alunos.</p>
 
-                <div className="mt-6 space-y-4">
+                <div className="professor-document-list mt-6 space-y-4">
                     {documentos.length ? <>{documentos.map((documento, index41) => <Fragment key={documento?.id ?? index41}>
                     <article className="professor-doc-item">
                         <div>
                             <h3>{documento.titulo}</h3>
                             <p>{documento.disciplina}</p>
+                            {documento.atividade_id && <p>Entrega de {documento.aluno}</p>}
                             <span>{documento.data}</span>
                         </div>
-                        <a href={`/arquivos/download/${encodeURIComponent(documento.arquivo)}`}>Baixar</a>
+                        <a data-ui-action href={`/arquivos/download/${encodeURIComponent(documento.arquivo)}`}>Baixar</a>
                     </article>
                     </Fragment>)}</> : <>
                     <div className="professor-doc-item">

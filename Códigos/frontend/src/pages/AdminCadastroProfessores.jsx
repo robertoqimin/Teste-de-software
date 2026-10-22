@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { ActionDialog } from '../components/ActionDialog';
+import { PeopleList } from '../components/PeopleList';
 import { AdminSidebar } from '../components/Navigation';
 import { MutationForm } from '../components/MutationForm';
 
@@ -16,16 +18,16 @@ export default function AdminCadastroProfessores({ data }) {
                 <p className="text-gray-400">Insira as informações do novo docente no sistema.</p>
             </div>
 
+
+        <ActionDialog title="Novo professor" label="Novo professor" wide>
             <div className="flex flex-wrap gap-4">
-                <button type="reset" form="professor-form" className="inline-flex h-12 items-center rounded-xl border border-white/10 bg-white/5 px-6 font-bold text-white transition hover:bg-white/10">
+                <button data-ui-action type="reset" form="professor-form" className="inline-flex h-12 items-center rounded-xl border border-white/10 bg-white/5 px-6 font-bold text-white transition hover:bg-white/10">
                     Limpar
                 </button>
-                <button type="submit" form="professor-form" className="inline-flex h-12 items-center rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 font-bold text-white transition hover:brightness-110">
+                <button data-ui-action type="submit" form="professor-form" className="inline-flex h-12 items-center rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 font-bold text-white transition hover:brightness-110">
                     Salvar Registro
                 </button>
             </div>
-        </header>
-
             <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_368px]">
                 <MutationForm action="/api/cadastro/professor" resetOnSuccess id="professor-form" className="glass-card cadastro-card rounded-[32px] px-6 py-8 md:px-10 lg:px-10" encType="multipart/form-data">
                     <section>
@@ -128,6 +130,9 @@ export default function AdminCadastroProfessores({ data }) {
                     </section>
                 </aside>
             </div>
+        </ActionDialog>
+        </header>
+        <PeopleList people={data.professores || []} tipo="professor" />
     </main>
     </>;
 }

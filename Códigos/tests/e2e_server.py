@@ -21,7 +21,8 @@ from werkzeug.security import generate_password_hash  # noqa: E402
 app = create_app()
 with get_session() as db:
     for role in ("admin", "aluno", "professor"):
-        db.add(UsuarioModel(email=f"{role}@teste.local", senha=generate_password_hash("teste123"), tipo=role))
+        db.add(UsuarioModel(email=f"{role}@teste.local", senha=generate_password_hash("teste123"), tipo="secretaria" if role == "admin" else role))
+    db.add(UsuarioModel(email="gestor@teste.local", senha=generate_password_hash("teste123"), tipo="admin"))
     db.flush()
     aluno = AlunoModel(usuario_id=2, nome="Aluno Teste", matricula="TESTE001", cpf="11111111111", status_matricula="Ativo", curso_serie="Ensino Médio")
     professor = ProfessorModel(usuario_id=3, nome="Professor Teste", cpf="22222222222", disciplina_principal="Matemática", regime_trabalho="40 horas semanais")

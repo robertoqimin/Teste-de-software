@@ -33,3 +33,6 @@ __all__ = [
     "TurmaModel",
     "TurmaDisciplinaModel",
 ]
+
+from .governanca_model import ConfiguracaoModel, AuditoriaModel
+from .horario_model import HorarioModel

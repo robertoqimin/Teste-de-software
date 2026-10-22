@@ -1,86 +1,44 @@
-import React, { Fragment } from 'react';
-
+import React, { useEffect, useState } from 'react';
 import { AdminSidebar } from '../components/Navigation';
+import { ActionDialog } from '../components/ActionDialog';
 import { MutationForm } from '../components/MutationForm';
-
-import { truthy } from '../utils';
+import { Pagination } from '../components/Pagination';
+import { api } from '../api';
 
 export default function AdminComunicados({ data }) {
-    const { comunicados = [], error = null } = data;
-    return <>
-
-    <AdminSidebar />
-
-    <main className="flex-1 p-10 overflow-y-auto">
-        <header className="flex justify-between items-center mb-10">
-            <div>
-                <h1 className="text-3xl font-bold">Comunicados</h1>
-                <p className="text-gray-400">Envie recados institucionais para alunos, professores e responsáveis.</p>
-            </div>
-            <div className="flex items-center gap-4">
-                <div className="text-right">
-                    <p className="text-sm font-bold">Admin Secretaria</p>
-                    <p className="text-[10px] text-cyan-400">Online agora</p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 border-2 border-white/20"></div>
-            </div>
-        </header>
-
-        <div className="comunicados-layout">
-            <section className="glass-card comunicado-card rounded-[20px] p-10">
-                <div className="mb-10 flex items-center gap-4">
-                    <h2 className="text-2xl font-bold">Comunicado Geral</h2>
-                </div>
-
-                {truthy(error) ? <> 
-                <p className="mb-6 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200">{error}</p>
-                 </> : <>  </>}
-
-                <MutationForm action="/api/admin/comunicados" method="post" className="space-y-9">
-                    <label className="block">
-                        <span className="mb-2 block text-sm font-bold text-slate-300">Título do Recado</span>
-                        <input name="titulo" type="text" placeholder="Ex: Reunião de Pais e Mestres" className="comunicado-field" required />
-                    </label>
-
-                    <label className="block">
-                        <span className="mb-2 block text-sm font-bold text-slate-300">Mensagem</span>
-                        <textarea name="mensagem" rows="6" placeholder="Digite a mensagem oficial para envio imediato..." className="comunicado-field comunicado-textarea" required></textarea>
-                    </label>
-
-                    <div className="flex justify-end">
-                        <button type="submit" className="comunicado-submit">
-                            Disparar Comunicado
-
-                        </button>
-                    </div>
-                </MutationForm>
-            </section>
-
-            <aside className="glass-card comunicados-enviados rounded-[20px] p-8">
-                <h2 className="text-lg font-bold">Recados Enviados</h2>
-
-                <div className="mt-7 space-y-4">
-                    {comunicados.length ? <>{comunicados.map((comunicado, index3) => <Fragment key={comunicado?.id ?? index3}>
-                    <article className="recado-card">
-                        <div className="flex items-start justify-between gap-4">
-                            <h3>{comunicado.titulo}</h3>
-                            <span>{comunicado.created_at_label}</span>
-                        </div>
-                        <p>{comunicado.mensagem_resumo}</p>
-                    </article>
-                    </Fragment>)}</> : <>
-                    <div className="recado-card">
-                        <h3>Nenhum comunicado enviado</h3>
-                        <p>Os recados criados aparecerão nesta lista.</p>
-                    </div>
-                    </>}
-                </div>
-
-                <button className="ver-todos-button">Ver todos os envios</button>
-            </aside>
-        </div>
-    </main>
-
-    
-    </>;
+    const [records, setRecords] = useState(data);
+    const [page, setPage] = useState(1);
+    const [size, setSize] = useState(20);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    useEffect(() => { setPage(1); }, [data]);
+    useEffect(() => {
+        const controller = new AbortController();
+        setBusy(true); setError('');
+        api(`/api/admin/comunicados?page=${page}&page_size=${size}`, { signal: controller.signal })
+            .then(setRecords).catch(e => { if (e.name !== 'AbortError') setError(e.message); })
+            .finally(() => { if (!controller.signal.aborted) setBusy(false); });
+        return () => controller.abort();
+    }, [page, size, data]);
+    const { comunicados = [] } = records;
+    return <><AdminSidebar /><main className="flex-1 p-10 overflow-y-auto">
+        <header className="flex flex-wrap justify-between items-center gap-4 mb-8"><div><h1 className="text-3xl font-bold">Comunicados</h1><p className="text-slate-300 mt-1">Consulte os comunicados enviados pela escola.</p></div>
+        <ActionDialog title="Novo comunicado" label="Novo comunicado">
+            <MutationForm action="/api/admin/comunicados" resetOnSuccess className="space-y-5">
+                <label className="block"><span className="block mb-2">Título do Recado</span><input name="titulo" required className="comunicado-field" /></label>
+                <label className="block"><span className="block mb-2">Mensagem</span><textarea name="mensagem" rows={4} required className="comunicado-field" /></label>
+                <button data-ui-action className="ui-button">Disparar Comunicado</button>
+            </MutationForm>
+        </ActionDialog></header>
+        <section className="glass-card rounded-2xl p-6" aria-busy={busy}>
+            <div className="mb-5"><h2 className="text-xl font-bold">Recados enviados</h2><p className="text-sm text-slate-300 mt-1">{records.pagination?.total ?? comunicados.length} registros encontrados</p></div>
+            {error && <p role="alert">{error}</p>}
+            <div className="comunicados-list space-y-6" tabIndex={0} aria-label="Comunicados enviados">{comunicados.map(c => <article key={c.id} className="border-b border-white/10 pb-6">
+                <h3 className="text-lg font-semibold">{c.titulo}</h3>
+                <p className="text-xs text-slate-300 mt-1">{c.destinatario} · {c.created_at_label}</p>
+                <p className="text-sm text-slate-200 mt-3 whitespace-pre-wrap break-words">{c.mensagem}</p>
+            </article>)}{!comunicados.length && <p className="text-slate-300">Nenhum comunicado enviado.</p>}</div>
+            <Pagination label="Paginação de comunicados" pagination={records.pagination} busy={busy} onPage={setPage} onSize={n => { setSize(n); setPage(1); }} />
+        </section>
+    </main></>;
 }

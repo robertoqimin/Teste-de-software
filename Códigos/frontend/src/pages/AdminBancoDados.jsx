@@ -1,20 +1,38 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../api';
+import { Pagination } from '../components/Pagination';
 import { AdminSidebar } from '../components/Navigation';
 
 export default function AdminBancoDados({ data }) {
-    const { alunos: todosAlunos = [], matriculas_hoje = 0, matriculas_pendentes = 0, professores: todosProfessores = [], total_alunos = 0, total_professores = 0 } = data;
+    const [records, setRecords] = useState(data);
+    const { alunos = [], professores = [], matriculas_hoje = 0, matriculas_pendentes = 0, total_alunos = 0, total_professores = 0 } = records;
     const [search, setSearch] = useState('');
     const [type, setType] = useState('todos');
-    const matches = (item) => Object.values(item).join(' ').toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR'));
-    const alunos = type === 'professor' ? [] : todosAlunos.filter(matches);
-    const professores = type === 'aluno' ? [] : todosProfessores.filter(matches);
+    const [page, setPage] = useState(1);
+    const [size, setSize] = useState(20);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    const query = new URLSearchParams({ search, type, page, page_size: size }).toString();
+    useEffect(() => {
+        const controller = new AbortController();
+        setBusy(true); setError('');
+        const timer = setTimeout(() => {
+            api(`/api/admin/registros?${query}`, { signal: controller.signal })
+                .then(setRecords).catch(e => { if (e.name !== 'AbortError') setError(e.message); })
+                .finally(() => { if (!controller.signal.aborted) setBusy(false); });
+        }, 250);
+        return () => { clearTimeout(timer); controller.abort(); };
+    }, [query]);
 
-    function exportCsv() {
+    async function exportCsv() {
+        let result;
+        try { result = await api(`/api/admin/registros?${query}&export=1`); }
+        catch (e) { setError(e.message); return; }
         const rows = [
             ['Identificação', 'Nome', 'E-mail', 'Tipo', 'Detalhe', 'Status'],
-            ...alunos.map((aluno) => [aluno.matricula, aluno.nome, aluno.email, 'Aluno', aluno.curso, aluno.status]),
-            ...professores.map((professor) => [`PROF-${professor.id}`, professor.nome, professor.email, 'Professor', professor.disciplina, 'Ativo']),
+            ...result.alunos.map((aluno) => [aluno.matricula, aluno.nome, aluno.email, 'Aluno', aluno.curso, aluno.status]),
+            ...result.professores.map((professor) => [`PROF-${professor.id}`, professor.nome, professor.email, 'Professor', professor.disciplina, 'Ativo']),
         ];
         const cell = (value) => {
             const text = String(value ?? '');
@@ -39,7 +57,7 @@ export default function AdminBancoDados({ data }) {
                 <p className="text-gray-400">Consulta e gerenciamento dos registros acadêmicos.</p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
-                <button type="button" onClick={exportCsv} className="banco-action-button">
+                <button data-ui-action type="button" onClick={exportCsv} className="banco-action-button">
 
                     Exportar CSV
                 </button>
@@ -85,9 +103,9 @@ export default function AdminBancoDados({ data }) {
 
                 <div className="flex flex-col gap-3 sm:flex-row">
                     <label className="banco-search">
-                        <input id="banco-search-input" aria-label="Pesquisar registros" value={search} onChange={(event) => setSearch(event.target.value)} type="search" placeholder="Pesquisar por nome ou ID..." />
+                        <input id="banco-search-input" aria-label="Pesquisar registros" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} type="search" placeholder="Pesquisar por nome ou ID..." />
                     </label>
-                    <select id="banco-type-select" value={type} onChange={(event) => setType(event.target.value)} className="banco-select" aria-label="Tipo de registro">
+                    <select id="banco-type-select" value={type} onChange={(event) => { setType(event.target.value); setPage(1); }} className="banco-select" aria-label="Tipo de registro">
                         <option value="todos">Todos os Tipos</option>
                         <option value="aluno">Alunos</option>
                         <option value="professor">Professores</option>
@@ -95,7 +113,8 @@ export default function AdminBancoDados({ data }) {
                 </div>
             </div>
 
-            <div className="banco-table-wrapper">
+            {error && <p role="alert">{error}</p>}
+            <div className="banco-table-wrapper" aria-busy={busy}>
                 <table className="w-full text-left">
                     <thead>
                         <tr className="text-gray-500 text-xs uppercase tracking-wider">
@@ -119,7 +138,7 @@ export default function AdminBancoDados({ data }) {
                             <td className="py-4 text-gray-400">{aluno.curso}</td>
                             <td className="py-4"><span className={`status-pill ${aluno.status_class}`}>{aluno.status}</span></td>
                             <td className="py-4 text-right">
-                                <Link to={`/admin/alunos/${encodeURIComponent(aluno.id)}`} className="banco-row-button">Gerenciar</Link>
+                                <Link data-ui-action to={`/admin/alunos/${encodeURIComponent(aluno.id)}`} className="ui-button">Ver detalhes</Link>
                             </td>
                         </tr>
                         </Fragment>)}
@@ -135,7 +154,7 @@ export default function AdminBancoDados({ data }) {
                             <td className="py-4 text-gray-400">{professor.disciplina}</td>
                             <td className="py-4"><span className="status-pill status-active">Ativo</span></td>
                             <td className="py-4 text-right">
-                                <Link to={`/admin/professores/${encodeURIComponent(professor.id)}`} className="banco-row-button">Gerenciar</Link>
+                                <Link data-ui-action to={`/admin/professores/${encodeURIComponent(professor.id)}`} className="ui-button">Ver detalhes</Link>
                             </td>
                         </tr>
                         </Fragment>)}
@@ -147,6 +166,7 @@ export default function AdminBancoDados({ data }) {
 </tbody>
                 </table>
             </div>
+            <Pagination pagination={records.pagination} busy={busy} onPage={setPage} onSize={n => { setSize(n); setPage(1); }} />
         </section>
     </main>
     </>;

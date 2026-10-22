@@ -2,7 +2,6 @@ import React, { Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminSidebar } from '../components/Navigation';
 
-import { truthy } from '../utils';
 
 export default function AdminPainel({ data }) {
     const { matriculas_hoje = 0, matriculas_pendentes = 0, registros_recentes = [], total_alunos = 0, total_professores = 0, user = {} } = data;
@@ -13,7 +12,7 @@ export default function AdminPainel({ data }) {
         <main className="flex-1 p-10 overflow-y-auto">
             <header className="flex justify-between items-center mb-10">
                 <div>
-                    <h1 className="text-3xl font-bold">Olá, {(user.email || "Administrador")}!</h1>
+                    <h1 className="text-3xl font-bold">Olá, {(user.email || "Secretaria Escolar")}!</h1>
                     <p className="text-slate-300">Bem-vindo ao centro de controle da sua escola.</p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -64,11 +63,7 @@ export default function AdminPainel({ data }) {
                             <td className="py-4 text-slate-300">{registro.tipo}</td>
                             <td className="py-4 text-slate-300">{registro.created_at_label}</td>
                             <td className="py-4 text-right">
-                                {truthy(registro.aluno_id) ? <> 
-                                <Link to={`/admin/alunos/${encodeURIComponent(registro.aluno_id)}`} className="bg-white/10 px-3 py-1 rounded-lg hover:bg-white/20">Gerenciar</Link>
-                                 </> : <> 
-                                <button className="bg-white/10 px-3 py-1 rounded-lg opacity-60">Gerenciar</button>
-                                 </>}
+                                <Link data-ui-action to={`/admin/${registro.aluno_id ? 'alunos' : 'professores'}/${encodeURIComponent(registro.aluno_id || registro.professor_id)}`} className="ui-button">Ver detalhes</Link>
                             </td>
                         </tr>
                         </Fragment>)}</> : <>

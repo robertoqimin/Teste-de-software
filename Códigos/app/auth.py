@@ -38,6 +38,7 @@ def generate_token(user):
     header = {"alg": "HS256", "typ": "JWT"}
     payload = {
         "sub": str(user.id),
+        "versao_sessao": user.versao_sessao,
         "email": user.email,
         "role": role,
         "tipo": role,
@@ -78,6 +79,18 @@ def decode_token_from_request():
     if exp < int(datetime.now(timezone.utc).timestamp()):
         return None, (jsonify({"erro": "Token JWT expirado"}), 401)
 
+    from app.database import get_session
+    from app.models import UsuarioModel
+    try:
+        user_id = int(payload.get("sub", ""))
+    except (ValueError, TypeError):
+        return None, (jsonify(erro="Token JWT invalido"), 401)
+    with get_session() as db:
+        user = db.get(UsuarioModel, user_id)
+        if not user or not user.ativo or user.exigir_troca or user.versao_sessao != payload.get("versao_sessao", 0):
+            return None, (jsonify(erro="Sessão revogada"), 401)
+        payload['role'] = normalize_role(user.tipo)
+        payload['tipo'] = normalize_role(user.tipo)
     return payload, None
 
 

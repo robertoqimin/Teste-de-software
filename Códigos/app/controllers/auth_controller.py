@@ -36,12 +36,16 @@ def login_usuario(data):
     if not user:
         return {"erro": "Usuario nao encontrado"}, 404
 
+    if not user.ativo:
+        return {"erro": "Conta desativada"}, 403
+
     if not check_password_hash(user.senha, senha):
         return {"erro": "Senha invalida"}, 401
 
     role = normalize_role(user.tipo)
 
     return {
+        "versao_sessao": user.versao_sessao,
         "id": user.id,
         "email": user.email,
         "tipo": role.upper(),

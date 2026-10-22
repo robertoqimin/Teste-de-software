@@ -148,6 +148,8 @@ def get_teacher_area_data(user_id):
             for atividade, disciplina in atividade_rows:
                 atividades_por_turma.setdefault(atividade.turma_id, []).append(
                     {
+                        "id": atividade.id,
+                        "tipo": atividade.tipo,
                         "titulo": atividade.titulo,
                         "descricao": atividade.descricao or "Sem descricao.",
                         "disciplina": disciplina.nome,
@@ -171,12 +173,10 @@ def get_teacher_area_data(user_id):
             .all()
         )
         documentos_rows = (
-            db.query(DocumentoModel, DisciplinaModel)
+            db.query(DocumentoModel, DisciplinaModel, AlunoModel.nome)
             .join(DisciplinaModel, DisciplinaModel.id == DocumentoModel.disciplina_id)
-            .filter(
-                DocumentoModel.professor_id == professor.id,
-                DocumentoModel.aluno_id.is_(None),
-            )
+            .outerjoin(AlunoModel, AlunoModel.id == DocumentoModel.aluno_id)
+            .filter(DocumentoModel.professor_id == professor.id)
             .order_by(DocumentoModel.id.desc())
             .limit(30)
             .all()
@@ -226,11 +226,14 @@ def get_teacher_area_data(user_id):
             "documentos": [
                 {
                     "titulo": documento.titulo,
+                    "aluno": aluno_nome,
+                    "atividade_id": documento.atividade_id,
+                    "id": documento.id,
                     "arquivo": documento.caminho_arquivo,
                     "disciplina": disciplina.nome,
                     "data": format_created_at(documento.data_envio),
                 }
-                for documento, disciplina in documentos_rows
+                for documento, disciplina, aluno_nome in documentos_rows
             ],
             "solicitacoes_documentos": [
                 {
@@ -258,6 +261,11 @@ def launch_activity(user_id, data, files=None):
     if not turma_id or not disciplina_id or not titulo:
         return {"erro": "Turma, disciplina e titulo sao obrigatorios"}, 400
 
+    tipo = data.get("tipo", "atividade")
+    if tipo not in {"atividade", "conteudo"}:
+        return {"erro": "Tipo de publicação inválido."}, 400
+    if tipo == "conteudo":
+        data_entrega = ""
     arquivo = files.get("arquivo") if files else None
     filename = None
     saved_path = None
@@ -312,6 +320,7 @@ def launch_activity(user_id, data, files=None):
             return {"erro": "Disciplina nao disponivel para este professor nesta turma"}, 403
 
         atividade = AtividadeModel(
+            tipo=tipo,
             professor_id=professor.id,
             turma_id=turma_id,
             disciplina_id=disciplina_id,
@@ -324,7 +333,7 @@ def launch_activity(user_id, data, files=None):
             arquivo.save(saved_path)
         db.add(atividade)
         db.commit()
-        return {"mensagem": "Atividade lancada"}, 201
+        return {"mensagem": "Conteúdo publicado" if tipo == "conteudo" else "Atividade lancada"}, 201
     except Exception:
         db.rollback()
         if saved_path and os.path.exists(saved_path):
@@ -478,6 +487,7 @@ def save_student_grade(user_id, data):
             )
             .first()
         )
+        nota_anterior = str(nota.nota) if nota else None
         if nota:
             nota.professor_id = professor.id
             nota.nota = nota_value
@@ -492,6 +502,8 @@ def save_student_grade(user_id, data):
             )
             db.add(nota)
 
+        from app.governanca import auditar
+        auditar(db, "Nota alterada", {"aluno_id": aluno_id, "disciplina_id": disciplina_id, "antes": nota_anterior, "depois": str(nota_value)})
         db.commit()
         return {"mensagem": "Nota salva"}, 200
     except IntegrityError:

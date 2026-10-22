@@ -113,3 +113,45 @@ def upload_documento(form, files, current_user=None, is_admin=False, aluno_id_ov
         raise
     finally:
         session_db.close()
+
+
+def enviar_atividade_aluno(user_id, atividade_id, files):
+    from app.models import AtividadeModel, AlunoTurmaModel, TurmaDisciplinaModel
+    arquivo = files.get('arquivo')
+    if not arquivo or not arquivo.filename:
+        return {"erro": "Selecione o arquivo da atividade."}, 400
+    original = secure_filename(arquivo.filename)
+    if not original:
+        return {"erro": "Nome do arquivo inválido."}, 400
+    saved_path = None
+    with get_session() as db:
+        try:
+            aluno = db.query(AlunoModel).filter_by(usuario_id=user_id).first()
+            atividade = db.get(AtividadeModel, atividade_id)
+            if not aluno or not atividade:
+                return {"erro": "Atividade não encontrada."}, 404
+            if atividade.tipo != "atividade":
+                return {"erro": "Conteúdos não recebem entregas."}, 400
+            vinculo = db.query(AlunoTurmaModel).join(
+                TurmaDisciplinaModel, TurmaDisciplinaModel.turma_id == AlunoTurmaModel.turma_id
+            ).filter(AlunoTurmaModel.aluno_id == aluno.id,
+                     AlunoTurmaModel.turma_id == atividade.turma_id,
+                     TurmaDisciplinaModel.disciplina_id == atividade.disciplina_id).first()
+            if not vinculo:
+                return {"erro": "Atividade não encontrada para este aluno."}, 404
+            folder = get_upload_folder()
+            os.makedirs(folder, exist_ok=True)
+            filename = f"entrega_{uuid4().hex}_{original[-180:]}"
+            saved_path = os.path.join(folder, filename)
+            arquivo.save(saved_path)
+            documento = DocumentoModel(aluno_id=aluno.id, professor_id=atividade.professor_id,
+                disciplina_id=atividade.disciplina_id, atividade_id=atividade.id,
+                titulo=atividade.titulo, caminho_arquivo=filename)
+            db.add(documento)
+            db.commit()
+            return {"mensagem": "Atividade enviada com sucesso.", "id": documento.id}, 201
+        except Exception:
+            db.rollback()
+            if saved_path and os.path.exists(saved_path):
+                os.remove(saved_path)
+            raise

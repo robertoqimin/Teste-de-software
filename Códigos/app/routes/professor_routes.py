@@ -20,6 +20,15 @@ def dashboard():
 @professor_bp.route("/api/professor/notas/salvar", methods=["POST"])
 def salvar_nota():
     teacher_required()
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from app.database import get_session
+    from app.models import ConfiguracaoModel
+    with get_session() as db:
+        config = db.get(ConfiguracaoModel, 'academico')
+        prazo = config.valor.get('prazo_notas') if config else None
+        if prazo and datetime.now(ZoneInfo('America/Sao_Paulo')).date().isoformat() > prazo:
+            return jsonify(erro="O prazo de lançamento de notas foi encerrado pelo administrador."), 403
     response, status = save_student_grade(session.get("user_id"), request.form)
     if 200 <= status < 300 and not request.path.startswith("/api/"):
         return redirect(url_for("professor.dashboard"))

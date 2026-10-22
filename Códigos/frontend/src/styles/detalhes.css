@@ -73,17 +73,6 @@
     color: rgba(156, 163, 175, 0.78);
 }
 
-.documento-request-form button,
-.aluno-edit-form button {
-    justify-self: end;
-    min-height: 48px;
-    border-radius: 14px;
-    background: linear-gradient(90deg, #06b6d4, #2563eb);
-    padding: 0 24px;
-    color: white;
-    font-weight: 800;
-}
-
 .documento-request-item {
     display: flex;
     align-items: center;
@@ -131,16 +120,8 @@
         padding: 24px;
     }
 
-    .documento-request-form button {
-        width: 100%;
-    }
-
     .aluno-edit-grid {
         grid-template-columns: 1fr;
-    }
-
-    .aluno-edit-form button {
-        width: 100%;
     }
 
     .documento-request-item {
@@ -148,3 +129,5 @@
         flex-direction: column;
     }
 }
+
+#root .detalhes-document-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }

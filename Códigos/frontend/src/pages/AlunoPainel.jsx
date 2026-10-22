@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { LogoutButton } from '../components/Navigation';
 import { MutationForm } from '../components/MutationForm';
 import { TabButton, TabPanel } from '../components/Tabs';
+import { AlunoComunicados } from '../components/AlunoComunicados';
+import { GradeSemanal } from '../components/GradeSemanal';
 import { truthy } from '../utils';
 
 export default function AlunoPainel({ data }) {
-    const { aluno = {}, disciplinas = [], documentos = [], notas = [], solicitacoes_documentos = [] } = data;
+    const { aluno = {}, disciplinas = [], horarios = [], documentos = [], notas = [], solicitacoes_documentos = [] } = data;
     return <>
 
     <aside className="w-72 glass-sidebar h-screen sticky top-0 flex flex-col p-6">
@@ -26,6 +28,7 @@ export default function AlunoPainel({ data }) {
             <TabButton type="button" group="aluno" value="documentos" as="button" className="aluno-nav-link w-full flex items-center px-4 py-3 rounded-xl hover:bg-white/5 transition-all hover:text-white">
                 Documentos
             </TabButton>
+            <TabButton group="aluno" value="comunicados" className="aluno-nav-link w-full flex items-center px-4 py-3 rounded-xl">Comunicados</TabButton>
         </nav>
 
         <div className="mt-auto pt-6 border-t border-white/10">
@@ -57,34 +60,12 @@ export default function AlunoPainel({ data }) {
         <TabPanel id="disciplinas" group="aluno" value="disciplinas" as="section" className="mb-10">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">Disciplinas</h2>
-                <span className="text-sm text-gray-400">Vínculos cadastrados</span>
+                <span className="text-sm text-gray-400">Grade semanal · segunda a sábado</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {disciplinas.length ? <>{disciplinas.map((disciplina, index26) => <Fragment key={disciplina?.id ?? index26}>
-                <article className="glass-card aluno-card aluno-discipline-card rounded-3xl p-5">
-                    <Link to={`/aluno/disciplinas/${encodeURIComponent(disciplina.id)}`} className="aluno-discipline-toggle">
-                        <span>
-                            <strong>{disciplina.nome}</strong>
-                            <small>Código: {disciplina.codigo} · {disciplina.carga_horaria}h</small>
-                        </span>
-                    </Link>
-                    <p className="mt-3 text-xs uppercase tracking-wider text-gray-500">Professor</p>
-                    <p className="mt-1 text-sm text-gray-300">
-                        {truthy(disciplina.professores) ? <> 
-                            {disciplina.professores.join(", ")}
-                         </> : <> 
-                            Nenhum professor associado.
-                         </>}
-                    </p>
-                </article>
-                </Fragment>)}</> : <>
-                <div className="glass-card aluno-card rounded-3xl p-5 md:col-span-2 xl:col-span-3">
-                    <h3 className="font-bold text-cyan-400">Nenhuma disciplina associada</h3>
-                    <p className="mt-3 text-sm leading-6 text-gray-300">As disciplinas aparecerão quando a administração vincular seu cadastro.</p>
-                </div>
-                </>}
-            </div>
+            <GradeSemanal disciplinas={disciplinas} horarios={horarios} />
         </TabPanel>
+
+        <TabPanel group="aluno" value="comunicados" as="section"><AlunoComunicados /></TabPanel>
 
         <TabPanel id="notas" group="aluno" value="notas" as="section" className="glass-card aluno-card rounded-[32px] p-8 mb-10">
             <div className="flex justify-between items-center mb-6">
@@ -125,7 +106,7 @@ export default function AlunoPainel({ data }) {
                 <h2 className="text-xl font-bold">Documentos Solicitados</h2>
                 <p className="mt-1 text-sm text-gray-400">Envie apenas os arquivos pedidos pela secretaria.</p>
 
-                <div className="mt-6 space-y-4">
+                <div className="aluno-document-list mt-6 space-y-4">
                     {solicitacoes_documentos.length ? <>{solicitacoes_documentos.map((solicitacao, index28) => <Fragment key={solicitacao?.id ?? index28}>
                     <article className="aluno-request-item">
                         <div>
@@ -135,10 +116,10 @@ export default function AlunoPainel({ data }) {
                         </div>
                         <strong className={`aluno-request-status aluno-request-status-${solicitacao.status}`}>{solicitacao.status_label}</strong>
                         {truthy(solicitacao.status !== "enviado") ? <> 
-                        <MutationForm action={"/api/aluno/documentos/upload"} method="post" encType="multipart/form-data" className="aluno-request-upload">
+                        <MutationForm modalTitle="Enviar documento solicitado" modalLabel="Enviar documento" action={"/api/aluno/documentos/upload"} method="post" encType="multipart/form-data" className="aluno-request-upload">
                             <input type="hidden" name="solicitacao_id" value={solicitacao.id} />
                             <input name="arquivo" type="file" required className="aluno-file" />
-                            <button className="aluno-submit compact">Enviar</button>
+                            <button data-ui-action className="aluno-submit compact">Enviar</button>
                         </MutationForm>
                          </> : <>  </>}
                     </article>
@@ -157,14 +138,14 @@ export default function AlunoPainel({ data }) {
                 <h2 className="text-xl font-bold">Arquivos Enviados</h2>
                 <p className="mt-1 text-sm text-gray-400">Histórico dos documentos encaminhados.</p>
 
-                <div className="mt-6 space-y-4">
+                <div className="aluno-document-list mt-6 space-y-4">
                     {documentos.length ? <>{documentos.map((documento, index29) => <Fragment key={documento?.id ?? index29}>
                     <article className="aluno-doc-item">
                         <div>
                             <h3>{documento.titulo}</h3>
                             <p>{documento.data}</p>
                         </div>
-                        <a href={`/arquivos/download/${encodeURIComponent(documento.arquivo)}`}>Baixar</a>
+                        <a data-ui-action href={`/arquivos/download/${encodeURIComponent(documento.arquivo)}`}>Baixar</a>
                     </article>
                     </Fragment>)}</> : <>
                     <div className="aluno-doc-item">

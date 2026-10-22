@@ -26,7 +26,7 @@ export default function AdminDetalhesProfessor({ data }) {
             </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(300px,0.9fr)_minmax(0,1.6fr)] gap-6">
             <section className="glass-card detalhes-card p-8 rounded-[32px] text-center">
                 {truthy(professor.foto_perfil) ? <> 
                 <img src={`/arquivos/perfil/${encodeURIComponent(professor.foto_perfil)}`} alt={`Foto de ${professor.nome}`} className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-white/10 object-cover" />
@@ -39,7 +39,7 @@ export default function AdminDetalhesProfessor({ data }) {
                 <p className="text-gray-400 text-sm mt-1">{professor.regime}</p>
                 <p className="text-gray-500 text-xs mt-1">{professor.email}</p>
 
-                <MutationForm action={`/api/admin/professores/${encodeURIComponent(professor.id)}/editar`} method="post" encType="multipart/form-data" className="aluno-edit-form">
+                <MutationForm modalTitle="Editar cadastro" modalLabel="Editar dados" action={`/api/admin/professores/${encodeURIComponent(professor.id)}/editar`} method="post" encType="multipart/form-data" className="aluno-edit-form">
                     <h3>Editar Dados</h3>
                     <label>
                         <span>Foto de Perfil</span>
@@ -87,11 +87,11 @@ export default function AdminDetalhesProfessor({ data }) {
                             <input name="data_admissao" type="date" defaultValue={professor.data_admissao_value} />
                         </label>
                     </div>
-                    <button>Salvar Alterações</button>
+                    <button data-ui-action className="ui-button">Salvar Alterações</button>
                 </MutationForm>
             </section>
 
-            <div className="lg:col-span-2 space-y-8">
+            <div className="space-y-8">
             <div className="glass-card detalhes-card p-6 rounded-[24px]">
                 <div className="flex gap-4 border-b border-white/10">
                     <TabButton type="button" className="professor-section-tab pb-2" group="professor-section" value="atuacao" as="button">Atuação</TabButton>
@@ -149,7 +149,7 @@ export default function AdminDetalhesProfessor({ data }) {
                                 <span className="block text-white">{documento.titulo}</span>
                                 <span className="text-xs text-gray-500">{documento.aluno} • {documento.disciplina} • {documento.data_envio}</span>
                             </div>
-                            <a href={`/arquivos/download/${encodeURIComponent(documento.arquivo)}`} className="text-cyan-400">Baixar</a>
+                            <a data-ui-action href={`/arquivos/download/${encodeURIComponent(documento.arquivo)}`} className="ui-button">Baixar</a>
                         </div>
                     </Fragment>)}</> : <>
                         <div className="bg-white/5 p-4 rounded-xl mb-4 border border-white/5 text-gray-400">
@@ -171,7 +171,8 @@ export default function AdminDetalhesProfessor({ data }) {
                 </div>
 
                 <TabPanel group="documento" value="solicitacoes" as="div">
-                    <MutationForm action={`/api/admin/professores/${encodeURIComponent(professor.id)}/documentos/solicitar`} method="post" className="documento-request-form">
+                    <div className="button-actions detalhes-document-actions flex flex-wrap items-center gap-4">
+                    <MutationForm modalTitle="Solicitar documento" modalLabel="Solicitar documento" action={`/api/admin/professores/${encodeURIComponent(professor.id)}/documentos/solicitar`} method="post" className="documento-request-form">
                         <label>
                             <span>Documento solicitado</span>
                             <input name="titulo" type="text" placeholder="Ex: Certificado atualizado" required />
@@ -180,10 +181,10 @@ export default function AdminDetalhesProfessor({ data }) {
                             <span>Orientação para o professor</span>
                             <textarea name="mensagem" placeholder="Informe prazo, formato ou observações importantes."></textarea>
                         </label>
-                        <button>Disparar solicitação</button>
+                        <button data-ui-action className="ui-button">Disparar solicitação</button>
                     </MutationForm>
 
-                    <MutationForm action={`/api/professores/${encodeURIComponent(professor.id)}/arquivos/upload`} method="post" encType="multipart/form-data" className="documento-request-form mt-8">
+                    <MutationForm modalTitle="Enviar arquivo" modalLabel="Enviar arquivo" action={`/api/professores/${encodeURIComponent(professor.id)}/arquivos/upload`} method="post" encType="multipart/form-data" className="documento-request-form mt-8">
                         <input type="hidden" name="redirect_to" value={`/admin/professores/${encodeURIComponent(professor.id)}`} />
                         <label>
                             <span>Documentos do professor</span>
@@ -193,8 +194,9 @@ export default function AdminDetalhesProfessor({ data }) {
                             <span>Arquivo</span>
                             <input name="arquivo" type="file" required />
                         </label>
-                        <button>Enviar Arquivo</button>
+                        <button data-ui-action className="ui-button">Enviar Arquivo</button>
                     </MutationForm>
+                    </div>
 
                     <div className="mt-8">
                         <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-400">Solicitações enviadas</h4>
@@ -225,7 +227,7 @@ export default function AdminDetalhesProfessor({ data }) {
                                 <span className="block text-white">{arquivo.titulo}</span>
                                 <span className="text-xs text-gray-500">{arquivo.data_envio}</span>
                             </div>
-                            <a href={`/arquivos/download/${encodeURIComponent(arquivo.arquivo)}`} className="text-cyan-400">Baixar</a>
+                            <a data-ui-action href={`/arquivos/download/${encodeURIComponent(arquivo.arquivo)}`} className="ui-button">Baixar</a>
                         </div>
                     </Fragment>)}</> : <>
                         <div className="bg-white/5 p-4 rounded-xl mb-4 border border-white/5 text-gray-400">

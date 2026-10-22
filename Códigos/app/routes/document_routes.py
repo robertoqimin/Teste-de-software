@@ -33,7 +33,7 @@ def _get_or_create_disciplina_geral(db):
 @document_bp.route('/arquivos/upload', methods=['POST'])
 @document_bp.route("/api/arquivos/upload", methods=["POST"])
 def upload_arquivo():
-    is_admin = normalize_role(session.get("user_role")) == "admin"
+    is_admin = normalize_role(session.get("user_role")) == "secretaria"
     jwt_payload = None
     if not is_admin:
         jwt_payload, error_response = decode_token_from_request()
@@ -42,7 +42,7 @@ def upload_arquivo():
 
         role = normalize_role(jwt_payload.get("role") or jwt_payload.get("tipo"))
         if role != "professor":
-            return jsonify({"erro": "Acesso permitido apenas para professores ou administradores"}), 403
+            return jsonify({"erro": "Acesso permitido apenas para professores ou a secretaria escolar"}), 403
 
     if "arquivo" not in request.files:
         return jsonify({"erro": "Arquivo nao enviado"}), 400
@@ -119,10 +119,8 @@ def download_arquivo(filename):
 
         if not documento and not atividade:
             return jsonify({"erro": "Arquivo nao encontrado para este professor"}), 404
-    elif role != "admin":
-        _, error_response = decode_token_from_request()
-        if error_response:
-            return error_response
+    elif role != "secretaria":
+        return jsonify(erro="Acesso negado"), 403
 
     return send_from_directory(get_upload_folder(), safe_filename, as_attachment=True)
 
@@ -130,8 +128,8 @@ def download_arquivo(filename):
 @document_bp.route('/professores/<int:professor_id>/arquivos/upload', methods=['POST'])
 @document_bp.route("/api/professores/<int:professor_id>/arquivos/upload", methods=["POST"])
 def upload_arquivo_professor(professor_id):
-    if normalize_role(session.get("user_role")) != "admin":
-        return jsonify({"erro": "Acesso permitido apenas para administradores"}), 403
+    if normalize_role(session.get("user_role")) != "secretaria":
+        return jsonify({"erro": "Acesso permitido apenas para a secretaria escolar"}), 403
 
     if "arquivo" not in request.files:
         return jsonify({"erro": "Arquivo nao enviado"}), 400

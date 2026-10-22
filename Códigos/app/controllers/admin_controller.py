@@ -1,7 +1,7 @@
 from datetime import date
 
-from flask import abort
-from sqlalchemy import func
+from flask import abort, request
+from sqlalchemy import func, or_, cast, String
 from sqlalchemy.exc import IntegrityError
 
 from app.controllers.auth_controller import _remove_saved_file, _save_profile_photo
@@ -58,7 +58,7 @@ def format_relative_date(value):
     return f"Ha {days} dias"
 
 
-def get_admin_data():
+def get_admin_data(paginated=False):
     db = get_session()
     try:
         total_alunos = db.query(func.count(AlunoModel.id)).scalar() or 0
@@ -76,20 +76,35 @@ def get_admin_data():
             or 0
         )
 
-        aluno_rows = (
-            db.query(AlunoModel, UsuarioModel.email)
-            .join(UsuarioModel, UsuarioModel.id == AlunoModel.usuario_id)
-            .order_by(AlunoModel.id.desc())
-            .limit(100)
-            .all()
-        )
-        professor_rows = (
-            db.query(ProfessorModel, UsuarioModel.email)
-            .join(UsuarioModel, UsuarioModel.id == ProfessorModel.usuario_id)
-            .order_by(ProfessorModel.id.desc())
-            .limit(20)
-            .all()
-        )
+        aluno_query = db.query(AlunoModel, UsuarioModel.email).join(UsuarioModel, UsuarioModel.id == AlunoModel.usuario_id)
+        professor_query = db.query(ProfessorModel, UsuarioModel.email).join(UsuarioModel, UsuarioModel.id == ProfessorModel.usuario_id)
+        pagination = None
+        if paginated:
+            from app.pagination import page_options, page_info
+            page, size = page_options()
+            search = request.args.get('search', '').strip()
+            kind = request.args.get('type', 'todos')
+            if search:
+                term = '%' + search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
+                aluno_query = aluno_query.filter(or_(*[column.ilike(term, escape='\\') for column in [AlunoModel.nome, UsuarioModel.email, AlunoModel.matricula, AlunoModel.cpf, AlunoModel.curso_serie, AlunoModel.status_matricula, cast(AlunoModel.id, String)]]))
+                professor_query = professor_query.filter(or_(*[column.ilike(term, escape='\\') for column in [ProfessorModel.nome, UsuarioModel.email, ProfessorModel.cpf, ProfessorModel.disciplina_principal, cast(ProfessorModel.id, String)]]))
+            if kind == 'professor':
+                aluno_query = aluno_query.filter(False)
+            elif kind == 'aluno':
+                professor_query = professor_query.filter(False)
+            student_count, teacher_count = aluno_query.count(), professor_query.count()
+            pagination = page_info(page, size, student_count + teacher_count)
+            page = pagination['page']
+            offset = (page - 1) * size
+            if request.args.get('export') != '1':
+                students_on_page = max(0, min(size, student_count - offset))
+                aluno_query = aluno_query.order_by(AlunoModel.id.desc()).offset(offset).limit(size)
+                professor_query = professor_query.order_by(ProfessorModel.id.desc()).offset(max(0, offset - student_count)).limit(size - students_on_page)
+        else:
+            aluno_query = aluno_query.order_by(AlunoModel.id.desc())
+            professor_query = professor_query.order_by(ProfessorModel.id.desc())
+        aluno_rows = aluno_query.all()
+        professor_rows = professor_query.all()
 
         alunos = [
             {
@@ -132,6 +147,7 @@ def get_admin_data():
         ] + [
             {
                 "aluno_id": None,
+                "professor_id": professor["id"],
                 "nome": professor["nome"],
                 "tipo": "Cadastro de Professor",
                 "detalhe": professor["disciplina"],
@@ -151,6 +167,7 @@ def get_admin_data():
         )
 
         return {
+            "pagination": pagination,
             "total_alunos": total_alunos,
             "total_professores": total_professores,
             "matriculas_pendentes": matriculas_pendentes,
@@ -163,17 +180,16 @@ def get_admin_data():
         db.close()
 
 
-def get_comunicados(limit=8):
+def get_comunicados():
+    from app.pagination import page_options, page_info
+    page, size = page_options()
     db = get_session()
     try:
-        comunicados = (
-            db.query(ComunicadoModel)
-            .order_by(ComunicadoModel.id.desc())
-            .limit(limit)
-            .all()
-        )
+        query = db.query(ComunicadoModel)
+        pagination = page_info(page, size, query.count())
+        comunicados = query.order_by(ComunicadoModel.id.desc()).offset((pagination['page'] - 1) * size).limit(size).all()
 
-        return [
+        return dict(pagination=pagination, comunicados=[
             {
                 "id": comunicado.id,
                 "titulo": comunicado.titulo,
@@ -187,7 +203,7 @@ def get_comunicados(limit=8):
                 "created_at_label": format_relative_date(comunicado.created_at),
             }
             for comunicado in comunicados
-        ]
+        ])
     finally:
         db.close()
 
@@ -248,7 +264,6 @@ def get_disciplinas_page_data():
         professores = (
             db.query(ProfessorModel)
             .order_by(ProfessorModel.nome.asc())
-            .limit(200)
             .all()
         )
         professor_vinculos = (
@@ -256,7 +271,6 @@ def get_disciplinas_page_data():
             .join(ProfessorModel, ProfessorModel.id == ProfessorDisciplinaModel.professor_id)
             .join(DisciplinaModel, DisciplinaModel.id == ProfessorDisciplinaModel.disciplina_id)
             .order_by(ProfessorDisciplinaModel.id.desc())
-            .limit(30)
             .all()
         )
 
@@ -280,6 +294,8 @@ def get_disciplinas_page_data():
             ],
             "professor_vinculos": [
                 {
+                    "professor_id": professor.id,
+                    "disciplina_id": disciplina.id,
                     "professor": professor.nome,
                     "disciplina": disciplina.nome,
                     "codigo": disciplina.codigo,
@@ -358,8 +374,8 @@ def get_turmas_page_data():
     db = get_session()
     try:
         turmas = db.query(TurmaModel).order_by(TurmaModel.nome.asc()).all()
-        alunos = db.query(AlunoModel).order_by(AlunoModel.nome.asc()).limit(250).all()
-        professores = db.query(ProfessorModel).order_by(ProfessorModel.nome.asc()).limit(250).all()
+        alunos = db.query(AlunoModel).order_by(AlunoModel.nome.asc()).all()
+        professores = db.query(ProfessorModel).order_by(ProfessorModel.nome.asc()).all()
         professor_ids = [professor.id for professor in professores]
         disciplinas_por_professor = {professor.id: [] for professor in professores}
         if professor_ids:
@@ -379,7 +395,6 @@ def get_turmas_page_data():
             .join(AlunoModel, AlunoModel.id == AlunoTurmaModel.aluno_id)
             .join(TurmaModel, TurmaModel.id == AlunoTurmaModel.turma_id)
             .order_by(AlunoTurmaModel.id.desc())
-            .limit(40)
             .all()
         )
         professor_vinculos = (
@@ -387,7 +402,6 @@ def get_turmas_page_data():
             .join(ProfessorModel, ProfessorModel.id == ProfessorTurmaModel.professor_id)
             .join(TurmaModel, TurmaModel.id == ProfessorTurmaModel.turma_id)
             .order_by(ProfessorTurmaModel.id.desc())
-            .limit(40)
             .all()
         )
         disciplina_vinculos = (
@@ -395,7 +409,6 @@ def get_turmas_page_data():
             .join(TurmaModel, TurmaModel.id == TurmaDisciplinaModel.turma_id)
             .join(DisciplinaModel, DisciplinaModel.id == TurmaDisciplinaModel.disciplina_id)
             .order_by(TurmaDisciplinaModel.id.desc())
-            .limit(40)
             .all()
         )
 
@@ -431,6 +444,8 @@ def get_turmas_page_data():
             ],
             "aluno_vinculos": [
                 {
+                    "aluno_id": aluno.id,
+                    "turma_id": turma.id,
                     "aluno": aluno.nome,
                     "matricula": aluno.matricula,
                     "turma": turma.nome,
@@ -441,6 +456,8 @@ def get_turmas_page_data():
             ],
             "professor_vinculos": [
                 {
+                    "professor_id": professor.id,
+                    "turma_id": turma.id,
                     "professor": professor.nome,
                     "disciplina": (
                         ", ".join(disciplinas_por_professor.get(professor.id) or [])
@@ -454,6 +471,8 @@ def get_turmas_page_data():
             ],
             "disciplina_vinculos": [
                 {
+                    "turma_id": turma.id,
+                    "disciplina_id": disciplina.id,
                     "turma": turma.nome,
                     "codigo": turma.codigo,
                     "disciplina": disciplina.nome,

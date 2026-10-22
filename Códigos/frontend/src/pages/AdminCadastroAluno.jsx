@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { ActionDialog } from '../components/ActionDialog';
+import { PeopleList } from '../components/PeopleList';
 import { AdminSidebar } from '../components/Navigation';
 import { MutationForm } from '../components/MutationForm';
 
@@ -13,19 +15,19 @@ export default function AdminCadastroAluno({ data }) {
         <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 className="text-3xl font-bold">Cadastro de Alunos</h1>
-                <p className="text-gray-400">Insira as informações do novo aluno no sistema.</p>
+                <p className="text-gray-400">Consulte os alunos cadastrados e abra um novo cadastro quando necessário.</p>
             </div>
 
+
+        <ActionDialog title="Novo aluno" label="Novo aluno" wide>
             <div className="flex flex-wrap gap-4">
-                <button type="reset" form="aluno-form" className="inline-flex h-12 items-center rounded-xl border border-white/10 bg-white/5 px-6 font-bold text-white transition hover:bg-white/10">
+                <button data-ui-action type="reset" form="aluno-form" className="inline-flex h-12 items-center rounded-xl border border-white/10 bg-white/5 px-6 font-bold text-white transition hover:bg-white/10">
                     Limpar
                 </button>
-                <button type="submit" form="aluno-form" className="inline-flex h-12 items-center rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 font-bold text-white transition hover:brightness-110">
+                <button data-ui-action type="submit" form="aluno-form" className="inline-flex h-12 items-center rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 font-bold text-white transition hover:brightness-110">
                     Salvar Registro
                 </button>
             </div>
-        </header>
-
             <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_368px]">
                 <MutationForm action="/api/cadastro/aluno" resetOnSuccess id="aluno-form" className="glass-card cadastro-card rounded-[32px] px-6 py-8 md:px-10 lg:px-10" encType="multipart/form-data">
                     <section>
@@ -121,10 +123,13 @@ export default function AdminCadastroAluno({ data }) {
 
                     <section className="rounded-[20px] border border-cyan-500/20 bg-cyan-500/10 px-8 py-8 shadow-2xl shadow-black/20">
                         <h2 className="text-lg font-extrabold text-white">Dica de Gestão</h2>
-                        <p className="mt-5 text-sm leading-6 text-slate-300">Certifique-se de que todos os documentos originais foram digitalizados antes de finalizar o cadastro. O sistema enviará um e-mail automático de confirmação para o responsável.</p>
+                        <p className="mt-5 text-sm leading-6 text-slate-300">Certifique-se de que todos os documentos originais foram digitalizados antes de finalizar o cadastro. Os dados salvos ficam disponíveis no cadastro do aluno.</p>
                     </section>
                 </aside>
             </div>
+        </ActionDialog>
+        </header>
+        <PeopleList people={data.alunos || []} tipo="aluno" />
     </main>
     </>;
 }

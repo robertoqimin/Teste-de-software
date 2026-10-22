@@ -10,8 +10,9 @@ export default function Login() {
     const [error, setError] = useState('');
     const [pending, setPending] = useState(false);
     function destination(user) {
+        if (user.exigir_troca) return '/alterar-senha';
         const previous = location.state?.from;
-        const prefix = { admin: '/admin/', aluno: '/aluno', professor: '/professor' }[user.role];
+        const prefix = { admin: '/gestao', secretaria: '/admin/', aluno: '/aluno', professor: '/professor' }[user.role];
         return prefix && previous?.startsWith(prefix) ? previous : homeForRole(user.role);
     }
     if (loading) return <p role="status">Carregando sessão…</p>;

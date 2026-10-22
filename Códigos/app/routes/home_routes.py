@@ -5,6 +5,7 @@ from app.routes import api_routes as api
 home_blueprint = Blueprint("home", __name__)
 
 
+@home_blueprint.route("/alterar-senha", methods=["GET"])
 @home_blueprint.route("/", methods=["GET"])
 def home():
     return render_template("spa.html")

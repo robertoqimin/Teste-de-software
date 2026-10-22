@@ -59,3 +59,11 @@ def upload_documento_aluno():
             return redirect(url_for("aluno.dashboard"))
 
     return jsonify(response), status
+
+
+@aluno_bp.route('/api/aluno/atividades/<int:atividade_id>/enviar', methods=['POST'])
+def enviar_atividade(atividade_id):
+    aluno_required()
+    from app.controllers.document_controller import enviar_atividade_aluno
+    response, status = enviar_atividade_aluno(session['user_id'], atividade_id, request.files)
+    return jsonify(response), status

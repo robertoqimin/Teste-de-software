@@ -1,9 +1,15 @@
 import React, { createContext, useContext, useRef, useState } from 'react';
+import { ActionDialog, DialogContext } from './ActionDialog';
 import { api } from '../api';
 
 export const PageDataContext = createContext({ refresh: async () => {} });
 
-export function MutationForm({ action, resetOnSuccess = false, children, ...props }) {
+export function MutationForm({ modalTitle, modalLabel, ...props }) {
+    return modalTitle ? <ActionDialog title={modalTitle} label={modalLabel || modalTitle}><MutationBody {...props} /></ActionDialog> : <MutationBody {...props} />;
+}
+
+function MutationBody({ action, resetOnSuccess = false, children, ...props }) {
+    const modal = useContext(DialogContext);
     const { refresh } = useContext(PageDataContext);
     const [pending, setPending] = useState(false);
     const [feedback, setFeedback] = useState(null);
@@ -16,6 +22,7 @@ export function MutationForm({ action, resetOnSuccess = false, children, ...prop
         const form = event.currentTarget;
         const payload = new FormData(form);
         setPending(true);
+        modal?.setBusy(true);
         setFeedback(null);
         try {
             const result = await api(action, { method: 'POST', body: payload });
@@ -27,6 +34,7 @@ export function MutationForm({ action, resetOnSuccess = false, children, ...prop
         } finally {
             submitting.current = false;
             setPending(false);
+            modal?.setBusy(false);
         }
     }
 

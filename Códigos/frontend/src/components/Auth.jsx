@@ -48,6 +48,7 @@ export function RequireRole({ role, children }) {
     if (loading) return <p className="p-10" role="status">Carregando sessão…</p>;
     if (error) return <div className="p-10" role="alert">Não foi possível carregar a sessão. <button onClick={() => window.location.reload()}>Tentar novamente</button></div>;
     if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    if (user.exigir_troca) return <Navigate to="/alterar-senha" replace />;
     if (user.role !== role) return <Navigate to={homeForRole(user.role)} replace />;
     return children;
 }
@@ -56,5 +57,5 @@ export function HomeRedirect() {
     const { loading, user, error } = useAuth();
     if (loading) return <p className="p-10" role="status">Carregando sessão…</p>;
     if (error) return <p className="p-10" role="alert">Não foi possível carregar a sessão. Recarregue a página.</p>;
-    return <Navigate to={homeForRole(user?.role)} replace />;
+    return <Navigate to={user?.exigir_troca ? '/alterar-senha' : homeForRole(user?.role)} replace />;
 }

@@ -7,6 +7,8 @@ from app.routes.aluno_routes import aluno_bp
 
 
 def register_routes(app):
+    from app.routes.gestao_routes import gestao_bp
+    app.register_blueprint(gestao_bp)
     app.register_blueprint(api_bp)
     register_api_errors(app)
     app.register_blueprint(home_blueprint)

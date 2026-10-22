@@ -2,7 +2,9 @@
 from flask import Blueprint, abort, jsonify, request, session
 from werkzeug.exceptions import HTTPException
 
+from app.controllers.horario_controller import dados_cronograma, salvar_horario, remover_horario
 from app.auth import normalize_role
+from app.governanca import validar_sessao, registrar_operacao
 from app.controllers import admin_controller as admin
 from app.controllers.aluno_controller import get_aluno_area_data, get_aluno_disciplina_detail
 from app.controllers.professor_controller import get_teacher_area_data
@@ -12,6 +14,9 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 
 def require_session():
+    error = validar_sessao()
+    if error:
+        return error
     if request.path.startswith("/api/") and request.endpoint != "api.current_session" and not session.get("user_id"):
         return jsonify(erro="Sua sessão expirou. Entre novamente."), 401
 
@@ -24,6 +29,8 @@ def current_session():
         "id": session["user_id"],
         "email": session.get("user_email"),
         "role": normalize_role(session.get("user_role")),
+        "exigir_troca": session.get("exigir_troca", False),
+        "permissoes": session.get("permissoes", {}),
     })
 
 
@@ -40,13 +47,19 @@ def admin_data():
     return jsonify(admin.get_admin_data())
 
 
+@api_bp.route("/admin/registros")
+def registros():
+    admin_required()
+    return jsonify(admin.get_admin_data(paginated=True))
+
+
 @api_bp.route("/admin/comunicados", methods=["GET", "POST"])
 def comunicados():
     admin_required()
     if request.method == "POST":
         result, status = admin.criar_comunicado(request.form, session.get("user_email"))
         return jsonify(result), status
-    return jsonify(comunicados=admin.get_comunicados())
+    return jsonify(admin.get_comunicados())
 
 
 @api_bp.route("/admin/disciplinas", methods=["GET", "POST"])
@@ -68,6 +81,8 @@ def turmas():
     if request.method == "POST":
         action = request.form.get("action", "create")
         operations = {
+            "schedule": salvar_horario,
+            "remove_schedule": remover_horario,
             "create": admin.criar_turma,
             "associate_student": admin.associar_aluno_turma,
             "associate_teacher": admin.associar_professor_turma,
@@ -76,7 +91,7 @@ def turmas():
             return jsonify(erro="Ação de turma inválida."), 400
         result, status = operations[action](request.form)
         return jsonify(result), status
-    return jsonify(admin.get_turmas_page_data())
+    return jsonify({**admin.get_turmas_page_data(), **dados_cronograma()})
 
 
 @api_bp.route("/admin/alunos/<int:aluno_id>")
@@ -130,6 +145,31 @@ def aluno_data():
     return jsonify(data)
 
 
+@api_bp.route("/aluno/comunicados")
+@api_bp.route("/professor/comunicados")
+def aluno_comunicados():
+    if request.path.startswith("/api/professor/"):
+        teacher_required()
+        recipients = ["todos", "geral", "professores", "professor"]
+    else:
+        aluno_required()
+        recipients = ["todos", "geral", "alunos", "aluno"]
+    from app.database import get_session
+    from app.models import ComunicadoModel
+    from sqlalchemy import func
+    before = request.args.get('before', type=int)
+    size = 5 if before else 3
+    with get_session() as db:
+        query = db.query(ComunicadoModel).filter(func.lower(ComunicadoModel.destinatario).in_(recipients))
+        if before:
+            query = query.filter(ComunicadoModel.id < before)
+        rows = query.order_by(ComunicadoModel.id.desc()).limit(size + 1).all()
+        items = rows[:size]
+        return jsonify(comunicados=[dict(id=c.id, titulo=c.titulo, mensagem=c.mensagem,
+            data=admin.format_created_at(c.created_at)) for c in items],
+            has_more=len(rows) > size, next_cursor=items[-1].id if items else None)
+
+
 @api_bp.route("/aluno/disciplinas/<int:disciplina_id>")
 def aluno_disciplina(disciplina_id):
     aluno_required()
@@ -153,6 +193,7 @@ def register_api_errors(app):
 
     @app.after_request
     def private_api_response(response):
+        registrar_operacao(response)
         if request.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
         return response

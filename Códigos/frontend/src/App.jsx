@@ -4,6 +4,8 @@ import { AuthProvider, HomeRedirect, RequireRole } from './components/Auth';
 import { LogoutButton } from './components/Navigation';
 import { DataPage } from './components/DataPage';
 import { PageStyles } from './components/PageStyles';
+import AlterarSenha from './pages/AlterarSenha';
+import Gestao from './pages/Gestao';
 import Login from './pages/Login';
 import AdminPainel from './pages/AdminPainel';
 import AdminBancoDados from './pages/AdminBancoDados';
@@ -19,15 +21,15 @@ import AlunoDisciplina from './pages/AlunoDisciplina';
 import ProfessorPainel from './pages/ProfessorPainel';
 
 const pages = [
-    ['/admin/dashboard', 'admin', AdminPainel, '/api/admin/dashboard', null, 'Painel Geral'],
-    ['/admin/banco-de-dados', 'admin', AdminBancoDados, '/api/admin/banco-de-dados', 'banco', 'Banco de Dados'],
-    ['/admin/cadastro-alunos', 'admin', AdminCadastroAluno, null, 'cadastro', 'Cadastro de Alunos'],
-    ['/admin/cadastro-professores', 'admin', AdminCadastroProfessores, null, 'cadastro', 'Cadastro de Professores'],
-    ['/admin/comunicados', 'admin', AdminComunicados, '/api/admin/comunicados', 'comunicados', 'Comunicados'],
-    ['/admin/disciplinas', 'admin', AdminDisciplinas, '/api/admin/disciplinas', 'disciplinas', 'Disciplinas'],
-    ['/admin/turmas', 'admin', AdminTurmas, '/api/admin/turmas', 'turmas', 'Turmas'],
-    ['/admin/alunos/:id', 'admin', AdminDetalhesAluno, '/api/admin/alunos/:id', 'detalhes', 'Detalhes do Aluno'],
-    ['/admin/professores/:id', 'admin', AdminDetalhesProfessor, '/api/admin/professores/:id', 'detalhes', 'Detalhes do Professor'],
+    ['/admin/dashboard', 'secretaria', AdminPainel, '/api/admin/dashboard', null, 'Painel Geral'],
+    ['/admin/banco-de-dados', 'secretaria', AdminBancoDados, '/api/admin/registros', 'banco', 'Banco de Dados'],
+    ['/admin/cadastro-alunos', 'secretaria', AdminCadastroAluno, '/api/admin/banco-de-dados', 'cadastro', 'Cadastro de Alunos'],
+    ['/admin/cadastro-professores', 'secretaria', AdminCadastroProfessores, '/api/admin/banco-de-dados', 'cadastro', 'Cadastro de Professores'],
+    ['/admin/comunicados', 'secretaria', AdminComunicados, '/api/admin/comunicados', 'comunicados', 'Comunicados'],
+    ['/admin/disciplinas', 'secretaria', AdminDisciplinas, '/api/admin/disciplinas', 'disciplinas', 'Disciplinas'],
+    ['/admin/turmas', 'secretaria', AdminTurmas, '/api/admin/turmas', 'turmas', 'Turmas'],
+    ['/admin/alunos/:id', 'secretaria', AdminDetalhesAluno, '/api/admin/alunos/:id', 'detalhes', 'Detalhes do Aluno'],
+    ['/admin/professores/:id', 'secretaria', AdminDetalhesProfessor, '/api/admin/professores/:id', 'detalhes', 'Detalhes do Professor'],
     ['/aluno', 'aluno', AlunoPainel, '/api/aluno', 'aluno', 'Área do Aluno'],
     ['/aluno/disciplinas/:id', 'aluno', AlunoDisciplina, '/api/aluno/disciplinas/:id', 'aluno', 'Disciplina'],
     ['/professor', 'professor', ProfessorPainel, '/api/professor', 'professor', 'Área do Professor'],
@@ -54,6 +56,8 @@ function LegacyRedirect({ to }) {
 
 export default function App() {
     return <BrowserRouter><AuthProvider><Routes>
+        <Route path="/alterar-senha" element={<AlterarSenha />} />
+        <Route path="/gestao" element={<RequireRole role="admin"><Gestao /></RequireRole>} />
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<PageStyles name="login" title="Login"><Login /></PageStyles>} />
         <Route path="/logout" element={<main className="p-10"><LogoutButton /></main>} />
